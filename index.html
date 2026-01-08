@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vertical Bar LED Clock – TRUE FIX + Dark Mode</title>
+
+<style>
+/* ---------- THEME VARIABLES ---------- */
+:root{
+  --bg-light: linear-gradient(145deg,#f0f0f0,#dcdcdc);
+  --bg-dark: #111;
+
+  --bar-light: linear-gradient(to right,#d8d8d8,#f0f0f0);
+  --bar-dark: linear-gradient(to right,#2b2b2b,#3a3a3a);
+
+  --num-light: #555;
+  --num-dark: #fff;
+
+  --circle-light: radial-gradient(circle at top,#444,#111);
+  --circle-dark: radial-gradient(circle at top,#555,#222);
+}
+
+/* ---------- BASE ---------- */
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:var(--bg-dark);
+  font-family:Arial, Helvetica, sans-serif;
+  transition:background 0.4s;
+}
+
+body.light{
+  background:var(--bg-light);
+}
+
+/* ---------- TOGGLE ---------- */
+.toggle{
+  position:fixed;
+  top:14px;
+  right:14px;
+  padding:8px 14px;
+  border-radius:20px;
+  background:#000;
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
+  user-select:none;
+}
+
+/* ---------- CLOCK ---------- */
+.clock{
+  display:flex;
+  gap:22px;
+  transform:rotate(-2deg);
+}
+
+.column{
+  position:relative;
+  width:44px;
+  height:270px;
+  border-radius:22px;
+  overflow:hidden;
+  background:var(--bar-dark);
+  box-shadow:
+    0 14px 25px rgba(0,0,0,.8),
+    inset 0 0 8px rgba(255,255,255,.08);
+  transition:background 0.4s;
+}
+
+body.light .column{
+  background:var(--bar-light);
+  box-shadow:
+    0 14px 25px rgba(0,0,0,.25),
+    inset 0 0 8px rgba(255,255,255,.6);
+}
+
+/* ---------- STRIP ---------- */
+.numbers{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  transition:transform 0.7s cubic-bezier(.4,1.25,.6,1);
+}
+
+.num{
+  height:28px;
+  line-height:28px;
+  font-size:14px;
+  color:var(--num-dark);
+  opacity:.55;
+}
+
+body.light .num{
+  color:var(--num-light);
+}
+
+/* ---------- FIXED CIRCLE ---------- */
+.active{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:var(--circle-dark);
+  color:#fff;
+  font-size:20px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:10;
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.7),
+    inset 0 2px 6px rgba(255,255,255,.3);
+}
+
+body.light .active{
+  background:var(--circle-light);
+}
+</style>
+</head>
+
+<body>
+
+<div class="toggle" id="modeBtn">☀ Light</div>
+<div class="clock" id="clock"></div>
+
+<script>
+/* ---------- CLOCK LOGIC ---------- */
+const structure = [
+  {max:1},{max:9},
+  {max:5},{max:9},
+  {max:5},{max:9}
+];
+
+const clock = document.getElementById("clock");
+const columns = [];
+
+function createColumn(max){
+  const col = document.createElement("div");
+  col.className = "column";
+
+  const numbers = document.createElement("div");
+  numbers.className = "numbers";
+
+  for(let i=0;i<=max;i++){
+    const n = document.createElement("div");
+    n.className = "num";
+    n.textContent = i;
+    numbers.appendChild(n);
+  }
+
+  const active = document.createElement("div");
+  active.className = "active";
+
+  col.appendChild(numbers);
+  col.appendChild(active);
+  clock.appendChild(col);
+
+  return { col, numbers, active };
+}
+
+structure.forEach(s=>{
+  columns.push(createColumn(s.max));
+});
+
+function update(){
+  const d = new Date();
+
+  let h = d.getHours();
+  h = h % 12 || 12;
+  const m = d.getMinutes();
+  const s = d.getSeconds();
+
+  const values = [
+    Math.floor(h/10), h%10,
+    Math.floor(m/10), m%10,
+    Math.floor(s/10), s%10
+  ];
+
+  columns.forEach((c,i)=>{
+    const itemHeight = c.numbers.children[0].offsetHeight;
+    const columnHeight = c.col.clientHeight;
+    const index = values[i];
+
+    const translateY =
+      (columnHeight / 2) -
+      (index * itemHeight) -
+      (itemHeight / 2);
+
+    c.numbers.style.transform = `translateY(${translateY}px)`;
+    c.active.textContent = index;
+  });
+}
+
+update();
+setInterval(update,1000);
+
+/* ---------- DARK / LIGHT TOGGLE ---------- */
+const btn = document.getElementById("modeBtn");
+btn.onclick = ()=>{
+  document.body.classList.toggle("light");
+  btn.textContent =
+    document.body.classList.contains("light")
+    ? "🌙 Dark"
+    : "☀ Light";
+};
+</script>
+
+</body>
+</html>
